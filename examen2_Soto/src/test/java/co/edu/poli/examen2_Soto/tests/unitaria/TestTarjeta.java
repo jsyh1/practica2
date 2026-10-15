@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import co.edu.poli.examen2_Soto.modelo.Credito;
 import co.edu.poli.examen2_Soto.modelo.Debito;
 import co.edu.poli.examen2_Soto.modelo.EstadoTarjeta;
 import co.edu.poli.examen2_Soto.modelo.Tarjeta;
@@ -37,6 +38,16 @@ public class TestTarjeta {
 	}
 
 	@Test
+	void cancelar_cambiaEstadoACancelada() {
+		Tarjeta tarjeta = new Debito("123", "2025-12-25", EstadoTarjeta.ACTIVA, new Titular("1", "Test"), 1000);
+
+		String mensaje = tarjeta.cancelar();
+
+		assertEquals(EstadoTarjeta.CANCELADA, tarjeta.getEstado());
+		assertTrue(mensaje.contains("CANCELADA"));
+	}
+
+	@Test
 	void getters_retornaValoresCorrectos() {
 		Titular titular = new Titular("1", "Test");
 
@@ -64,6 +75,17 @@ public class TestTarjeta {
 		assertEquals("2030-01-01", t.getFechaExp());
 		assertEquals(EstadoTarjeta.CANCELADA, t.getEstado());
 		assertEquals(nuevo, t.getTitular());
+	}
+
+	@Test
+	void credito_conservaYActualizaLimite() {
+		Credito tarjeta = new Credito("456", "2026-10-15", EstadoTarjeta.ACTIVA, new Titular("2", "Nuevo"), 5000);
+
+		assertEquals(5000, tarjeta.getLimite());
+
+		tarjeta.setLimite(7500);
+
+		assertEquals(7500, tarjeta.getLimite());
 	}
 
 	@Test
@@ -96,5 +118,12 @@ public class TestTarjeta {
 	@Test
 	void dao_rechazaTarjetaNulaAntesDeConectarse() {
 		assertThrows(NullPointerException.class, () -> new DAOTarjeta().create(null));
+	}
+
+	@Test
+	void dao_rechazaTitularNuloAntesDeConectarse() {
+		Tarjeta tarjeta = new Debito("123", "2025-12-25", EstadoTarjeta.ACTIVA, null, 1000);
+
+		assertThrows(NullPointerException.class, () -> new DAOTarjeta().create(tarjeta));
 	}
 }
