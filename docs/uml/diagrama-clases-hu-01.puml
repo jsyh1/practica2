@@ -1,0 +1,117 @@
+@startuml
+title Tarjetas JavaFX + MySQL - HU-01
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "modelo" as Modelo {
+  abstract class Tarjeta {
+    - numero : String
+    - fechaExp : String
+    - estado : EstadoTarjeta
+    - titular : Titular
+    + Tarjeta(numero : String, fechaExp : String, estado : EstadoTarjeta, titular : Titular)
+    + getEstado() : EstadoTarjeta
+    + setEstado(estado : EstadoTarjeta) : void
+    + bloquear() : String
+    + activar() : String
+    + cancelar() : String
+    + toString() : String
+  }
+
+  enum EstadoTarjeta {
+    ACTIVA
+    BLOQUEADA
+    CANCELADA
+    {static} desdeBaseDeDatos(valor : String) : EstadoTarjeta
+  }
+
+  class Debito {
+    - saldo : double
+    + Debito(numero : String, fechaExp : String, estado : EstadoTarjeta, titular : Titular, saldo : double)
+    + getSaldo() : double
+    + setSaldo(saldo : double) : void
+  }
+
+  class Credito {
+    - limite : double
+    + Credito(numero : String, fechaExp : String, estado : EstadoTarjeta, titular : Titular, limite : double)
+    + getLimite() : double
+    + setLimite(limite : double) : void
+  }
+
+  class Titular {
+    - id : String
+    - nombre : String
+    + Titular(id : String, nombre : String)
+    + getId() : String
+    + getNombre() : String
+  }
+}
+
+package "servicios" as Servicios {
+  interface "CRUD<T>" as CRUD {
+    + create(t : T) : String
+    + readone(id : K) : T
+    + readall() : List<T>
+  }
+
+  class DAOTarjeta {
+    + create(t : Tarjeta) : String
+    + readone(num : K) : Tarjeta
+    + readall() : List<Tarjeta>
+  }
+
+  class DAOTitular {
+    + create(t : Titular) : String
+    + readone(id : K) : Titular
+    + readall() : List<Titular>
+  }
+
+  class ConexionBD {
+    - {static} instancia : ConexionBD
+    - conexion : Connection
+    - ConexionBD()
+    + {static} getInstancia() : ConexionBD
+    + getConexion() : Connection
+  }
+
+  class "java.sql.Connection" as JDBCConnection <<JDK>>
+}
+
+package "controlador" as Controlador {
+  class ControlFormCard {
+    - cmbEstado : ComboBox<EstadoTarjeta>
+    - daoTarjeta : DAOTarjeta
+    - daoTitular : DAOTitular
+    - initialize() : void
+    - pressConsulta(event : ActionEvent) : void
+    - pressCreacion(event : ActionEvent) : void
+  }
+}
+
+package "vista" as Vista {
+  class App
+  class "formCard.fxml" as FormCardFXML <<FXML>>
+}
+
+Tarjeta <|-- Debito
+Tarjeta <|-- Credito
+Tarjeta --> EstadoTarjeta : estado
+Tarjeta "*" --> "1" Titular : titular
+DAOTarjeta ..|> CRUD : T = Tarjeta
+DAOTitular ..|> CRUD : T = Titular
+DAOTarjeta ..> ConexionBD
+DAOTitular ..> ConexionBD
+ControlFormCard ..> DAOTarjeta
+ControlFormCard ..> DAOTitular
+ControlFormCard ..> EstadoTarjeta
+App ..> FormCardFXML : carga
+FormCardFXML ..> ControlFormCard : fx:controller
+ConexionBD "1" o-- "1" JDBCConnection : conexion
+
+note bottom of DAOTarjeta
+  JDBC con PreparedStatement.
+  create() inserta tarjeta y subtipo en una transaccion.
+  La API original no contiene update() ni delete().
+end note
+@enduml
